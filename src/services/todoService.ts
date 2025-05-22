@@ -2,11 +2,20 @@
 import { Todo } from "@/components/TodoItem";
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Initialize Supabase client with fallbacks and console warnings for debugging
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Check if the environment variables are available
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Missing Supabase environment variables. Please check your .env file.");
+}
+
+// Create the Supabase client with more robust error handling
+const supabase = createClient(
+  supabaseUrl || 'https://placeholder-url.supabase.co', 
+  supabaseKey || 'placeholder-key'
+);
 
 // Helper to generate a unique ID (fallback if needed)
 const generateId = () => {
@@ -16,6 +25,11 @@ const generateId = () => {
 // Load todos from Supabase
 export const loadTodos = async (): Promise<Todo[]> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Using empty todos array as fallback.");
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('todos')
       .select('*')
@@ -36,6 +50,11 @@ export const loadTodos = async (): Promise<Todo[]> => {
 // Save a todo to Supabase
 export const saveTodo = async (todo: Omit<Todo, 'id' | 'createdAt'>): Promise<Todo | null> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Cannot save todo.");
+      return null;
+    }
+    
     const newTodo = {
       ...todo,
       createdAt: new Date(),
@@ -75,6 +94,11 @@ export const addTodo = async (
 // Update an existing todo
 export const updateTodo = async (updatedTodo: Todo): Promise<Todo | null> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Cannot update todo.");
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('todos')
       .update({
@@ -101,6 +125,11 @@ export const updateTodo = async (updatedTodo: Todo): Promise<Todo | null> => {
 // Delete a todo
 export const deleteTodo = async (id: string): Promise<boolean> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Cannot delete todo.");
+      return false;
+    }
+    
     const { error } = await supabase
       .from('todos')
       .delete()
@@ -121,6 +150,11 @@ export const deleteTodo = async (id: string): Promise<boolean> => {
 // Toggle the completed status of a todo
 export const toggleTodoCompleted = async (id: string, completed: boolean): Promise<Todo | null> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Cannot toggle todo completion.");
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('todos')
       .update({ completed })
@@ -143,6 +177,14 @@ export const toggleTodoCompleted = async (id: string, completed: boolean): Promi
 // Generate summary with LLM and send to Slack
 export const generateAndSendSummary = async (): Promise<{ success: boolean; message: string }> => {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials missing. Cannot generate summary.");
+      return { 
+        success: false, 
+        message: "Missing Supabase credentials. Please check your environment variables." 
+      };
+    }
+    
     const { data, error } = await supabase.functions.invoke('summarize-todos');
     
     if (error) {
@@ -165,3 +207,4 @@ export const generateAndSendSummary = async (): Promise<{ success: boolean; mess
     };
   }
 };
+

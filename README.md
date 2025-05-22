@@ -1,73 +1,99 @@
-# Welcome to your Lovable project
 
-## Project info
+# Todo Manager with AI Summaries
 
-**URL**: https://lovable.dev/projects/741c178d-f305-4c9a-9e91-2b5d400516d7
+A modern React application for managing to-do items with AI-powered summarization and Slack integration capabilities.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Todo Management**: Create, read, update, and delete todos with priority levels
+- **AI Summarization**: Generate AI summaries of your pending tasks (requires backend integration)
+- **Slack Integration**: Send todo summaries to Slack (requires backend integration)
+- **Responsive Design**: Works on mobile and desktop
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/741c178d-f305-4c9a-9e91-2b5d400516d7) and start prompting.
+- **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
+- **State Management**: React Hooks
+- **Styling**: Tailwind CSS
+- **Local Storage**: Browser's localStorage for temporary data persistence
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v14 or later)
+- npm (v6 or later)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
-
+1. Clone the repository:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
+```
 
-# Step 2: Navigate to the project directory.
+2. Navigate to the project directory:
+```sh
 cd <YOUR_PROJECT_NAME>
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. Install dependencies:
+```sh
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Start the development server:
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Backend Integration (Future)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+This project is designed to be connected to a backend service that will:
 
-**Use GitHub Codespaces**
+1. Store todos in a database (Supabase/Firebase)
+2. Generate summaries using an LLM (OpenAI, Cohere, etc.)
+3. Post summaries to Slack via Webhooks
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Backend Requirements
 
-## What technologies are used for this project?
+- Node.js (Express) or Java (Spring Boot)
+- Database: Supabase/Firebase
+- LLM API Integration: OpenAI/Cohere/etc.
+- Slack Webhooks
 
-This project is built with:
+## Required Environment Variables (for Backend)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Create a `.env` file in your backend project with:
 
-## How can I deploy this project?
+```
+# LLM API Keys
+OPENAI_API_KEY=your_openai_key_here
 
-Simply open [Lovable](https://lovable.dev/projects/741c178d-f305-4c9a-9e91-2b5d400516d7) and click on Share -> Publish.
+# Slack Integration
+SLACK_WEBHOOK_URL=your_slack_webhook_url
 
-## Can I connect a custom domain to my Lovable project?
+# Database Connection
+DATABASE_URL=your_database_connection_string
+```
 
-Yes, you can!
+## Slack Webhook Setup
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Go to your Slack workspace
+2. Create a new app at https://api.slack.com/apps
+3. Enable Incoming Webhooks
+4. Create a new webhook for your desired channel
+5. Copy the webhook URL to your environment variables
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Planned Features
+
+- [ ] Backend implementation with Node.js/Express
+- [ ] Database integration with Supabase
+- [ ] OpenAI API integration for intelligent summaries
+- [ ] Slack webhook implementation
+- [ ] User authentication system
+- [ ] Todo categories and tags
+- [ ] Due dates and reminders
+
+## License
+
+This project is open source and available under the MIT License.

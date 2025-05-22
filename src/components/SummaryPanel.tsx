@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDown, MessageSquare, Send, Loader2 } from 'lucide-react';
 import { Todo } from './TodoItem';
 import { toast } from "sonner";
+import { generateAndSendSummary } from '@/services/todoService';
 
 interface SummaryPanelProps {
   todos: Todo[];
@@ -18,42 +18,24 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({ todos }) => {
 
   const pendingTodos = todos.filter(todo => !todo.completed);
 
-  const generateSummary = async () => {
-    // In a real implementation, this would call your backend API
+  const handleGenerateAndSendSummary = async () => {
     setLoading(true);
+    setSummary(null);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await generateAndSendSummary();
       
-      // Example summary - in real app this would come from the LLM
-      const fakeSummary = pendingTodos.length > 0 
-        ? `You have ${pendingTodos.length} pending tasks. ${pendingTodos.length > 2 ? 'Focus on completing the high priority items first.' : 'They should be manageable to complete soon.'} ${pendingTodos.filter(t => t.priority === 'high').length > 0 ? 'There are some high priority items that need your attention.' : 'Most items are not high priority.'}`
-        : "Great job! You've completed all your tasks. Time to add new goals.";
-      
-      setSummary(fakeSummary);
+      if (result.success) {
+        setSummary(result.message);
+        toast.success("Summary sent to Slack successfully!");
+      } else {
+        toast.error(result.message || "Failed to generate and send summary");
+      }
     } catch (error) {
-      toast.error("Failed to generate summary");
+      toast.error("An error occurred while generating the summary");
       console.error("Error generating summary:", error);
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const sendToSlack = async () => {
-    if (!summary) return;
-    
-    setSlackSending(true);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Summary sent to Slack successfully!");
-    } catch (error) {
-      toast.error("Failed to send to Slack");
-      console.error("Error sending to Slack:", error);
-    } finally {
-      setSlackSending(false);
     }
   };
 
@@ -84,33 +66,18 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({ todos }) => {
       </CardContent>
       <CardFooter className="flex justify-between flex-col sm:flex-row gap-2">
         <Button 
-          onClick={generateSummary} 
+          onClick={handleGenerateAndSendSummary} 
           disabled={loading || pendingTodos.length === 0}
           className="w-full sm:w-auto"
         >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : 'Generate Summary'}
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          onClick={sendToSlack} 
-          disabled={!summary || slackSending}
-          className="w-full sm:w-auto"
-        >
-          {slackSending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sending...
+              Generating & Sending...
             </>
           ) : (
             <>
-              <Send size={16} className="mr-2" />
-              Send to Slack
+              Generate & Send to Slack
             </>
           )}
         </Button>

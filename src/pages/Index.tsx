@@ -1,27 +1,41 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
 import TodoList from '@/components/TodoList';
 import TodoForm from '@/components/TodoForm';
 import SummaryPanel from '@/components/SummaryPanel';
 import { Todo } from '@/components/TodoItem';
-import { loadTodos, saveTodos, addTodo, updateTodo, deleteTodo, toggleTodoCompleted } from '@/services/todoService';
+import { loadTodos, addTodo, updateTodo, deleteTodo, toggleTodoCompleted } from '@/services/todoService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from 'sonner';
 
 const Index = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load todos from localStorage on initial render
+  // Load todos from Supabase on initial render
   useEffect(() => {
-    const storedTodos = loadTodos();
-    setTodos(storedTodos);
+    const fetchTodos = async () => {
+      setLoading(true);
+      try {
+        const data = await loadTodos();
+        setTodos(data);
+      } catch (error) {
+        console.error("Failed to load todos:", error);
+        toast.error("Failed to load todos");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTodos();
   }, []);
 
-  const handleAddTodo = (todoData: Omit<Todo, 'id' | 'createdAt'>) => {
+  const handleAddTodo = async (todoData: Omit<Todo, 'id' | 'createdAt'>) => {
     if (editingTodo) {
       // Updating existing todo
       const updated = {
@@ -30,19 +44,34 @@ const Index = () => {
         priority: todoData.priority,
       };
       
-      const updatedTodo = updateTodo(updated);
-      setTodos(todos.map(todo => todo.id === updatedTodo.id ? updatedTodo : todo));
+      const updatedTodo = await updateTodo(updated);
+      if (updatedTodo) {
+        setTodos(todos.map(todo => todo.id === updatedTodo.id ? updatedTodo : todo));
+        toast.success("Todo updated successfully");
+      } else {
+        toast.error("Failed to update todo");
+      }
       setEditingTodo(null);
     } else {
       // Adding new todo
-      const newTodo = addTodo(todoData.title, todoData.priority);
-      setTodos([...todos, newTodo]);
+      const newTodo = await addTodo(todoData.title, todoData.priority);
+      if (newTodo) {
+        setTodos([newTodo, ...todos]);
+        toast.success("Todo added successfully");
+      } else {
+        toast.error("Failed to add todo");
+      }
     }
   };
 
-  const handleDeleteTodo = (id: string) => {
-    deleteTodo(id);
-    setTodos(todos.filter(todo => todo.id !== id));
+  const handleDeleteTodo = async (id: string) => {
+    const success = await deleteTodo(id);
+    if (success) {
+      setTodos(todos.filter(todo => todo.id !== id));
+      toast.success("Todo deleted successfully");
+    } else {
+      toast.error("Failed to delete todo");
+    }
   };
 
   const handleEditTodo = (todo: Todo) => {
@@ -50,9 +79,13 @@ const Index = () => {
     setIsFormOpen(true);
   };
 
-  const handleToggleComplete = (id: string, completed: boolean) => {
-    const updatedTodo = toggleTodoCompleted(id, completed);
-    setTodos(todos.map(todo => todo.id === id ? updatedTodo : todo));
+  const handleToggleComplete = async (id: string, completed: boolean) => {
+    const updatedTodo = await toggleTodoCompleted(id, completed);
+    if (updatedTodo) {
+      setTodos(todos.map(todo => todo.id === id ? updatedTodo : todo));
+    } else {
+      toast.error("Failed to update todo status");
+    }
   };
 
   const closeForm = () => {
@@ -83,46 +116,52 @@ const Index = () => {
 
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="all">
-                    All ({todos.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="pending">
-                    Pending ({pendingCount})
-                  </TabsTrigger>
-                  <TabsTrigger value="completed">
-                    Completed ({completedCount})
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all">
-                  <TodoList 
-                    todos={todos} 
-                    onDeleteTodo={handleDeleteTodo} 
-                    onEditTodo={handleEditTodo}
-                    onToggleComplete={handleToggleComplete} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="pending">
-                  <TodoList 
-                    todos={todos.filter(todo => !todo.completed)} 
-                    onDeleteTodo={handleDeleteTodo} 
-                    onEditTodo={handleEditTodo}
-                    onToggleComplete={handleToggleComplete} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="completed">
-                  <TodoList 
-                    todos={todos.filter(todo => todo.completed)} 
-                    onDeleteTodo={handleDeleteTodo} 
-                    onEditTodo={handleEditTodo}
-                    onToggleComplete={handleToggleComplete} 
-                  />
-                </TabsContent>
-              </Tabs>
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="all">
+                      All ({todos.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="pending">
+                      Pending ({pendingCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="completed">
+                      Completed ({completedCount})
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="all">
+                    <TodoList 
+                      todos={todos} 
+                      onDeleteTodo={handleDeleteTodo} 
+                      onEditTodo={handleEditTodo}
+                      onToggleComplete={handleToggleComplete} 
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="pending">
+                    <TodoList 
+                      todos={todos.filter(todo => !todo.completed)} 
+                      onDeleteTodo={handleDeleteTodo} 
+                      onEditTodo={handleEditTodo}
+                      onToggleComplete={handleToggleComplete} 
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="completed">
+                    <TodoList 
+                      todos={todos.filter(todo => todo.completed)} 
+                      onDeleteTodo={handleDeleteTodo} 
+                      onEditTodo={handleEditTodo}
+                      onToggleComplete={handleToggleComplete} 
+                    />
+                  </TabsContent>
+                </Tabs>
+              )}
             </CardContent>
           </Card>
 
